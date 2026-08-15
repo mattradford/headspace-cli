@@ -13,7 +13,12 @@ from rich.progress import track
 from urllib.parse import urlparse, parse_qs
 from rich.traceback import install
 
-from pyheadspace.auth import authenticate, prompt
+from pyheadspace.auth import (
+    authenticate,
+    extract_hsngjwt_from_cookie,
+    normalize_bearer_token,
+    prompt,
+)
 
 # For better tracebacks
 install()
@@ -647,11 +652,46 @@ def everyday(_from: str, to: str, duration: Union[list, tuple], out: str):
 
 
 @cli.command("login")
-def login():
+@click.option(
+    "--cookie",
+    "cookie_value",
+    default="",
+    help="Use a browser-issued hsngjwt cookie value instead of legacy password login.",
+)
+@click.option(
+    "--token",
+    "token_value",
+    default="",
+    help="Use a bearer token directly instead of the blocked password flow.",
+)
+def login(cookie_value: str, token_value: str):
+    if token_value:
+        bearer_token = normalize_bearer_token(token_value)
+        write_bearer(bearer_token)
+        console.print("[green]:heavy_check_mark:[/green] Logged in successfully!")
+        return
+
+    if cookie_value:
+        try:
+            cookie_token = extract_hsngjwt_from_cookie(cookie_value)
+            write_bearer(normalize_bearer_token(cookie_token))
+        except ValueError as exc:
+            raise click.BadParameter(str(exc), param_hint="--cookie") from exc
+        console.print("[green]:heavy_check_mark:[/green] Logged in successfully!")
+        return
+
     email, password = prompt()
     bearer_token = authenticate(email, password)
     if not bearer_token:
+        console.print(
+            "[yellow]Headspace has blocked the legacy password login flow with 'Cross origin login not allowed.'[/yellow]"
+        )
+        console.print(
+            "[green]Use the browser session instead:[/green] open https://my.headspace.com, open browser devtools, copy the hsngjwt cookie value, then run:"
+        )
+        console.print("[bold]headspace login --cookie '<hsngjwt value>'[/bold]")
         raise click.Abort()
+
     write_bearer(bearer_token)
     console.print("[green]:heavy_check_mark:[/green] Logged in successfully!")
 
