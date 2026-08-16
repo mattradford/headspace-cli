@@ -267,6 +267,15 @@ def get_signed_url(response: dict, duration: List[int]) -> dict:
     return signed_links
 
 
+def format_everyday_filename(day: date, name: str) -> str:
+    date_prefix = day.strftime("%Y-%m-%d")
+    if not name:
+        return date_prefix
+    if name.startswith(date_prefix):
+        return name
+    return f"{date_prefix} - {name}"
+
+
 def download_pack_session(
     id: Union[int, str],
     duration: List[int],
@@ -627,8 +636,19 @@ def write_bearer(bearer_id):
     default=date.today().strftime("%Y-%m-%d"),
     help="Download till a specific date. DATE-FORMAT=>yyyy-mm-dd",
 )
+@click.option(
+    "--prepend-date/--no-prepend-date",
+    default=False,
+    help="Prefix each download with the date of the everyday meditation.",
+)
 @shared_cmd(COMMON_CMD)
-def everyday(_from: str, to: str, duration: Union[list, tuple], out: str):
+def everyday(
+    _from: str,
+    to: str,
+    duration: Union[list, tuple],
+    out: str,
+    prepend_date: bool,
+):
     """
     Download everyday headspace.
     """
@@ -647,7 +667,8 @@ def everyday(_from: str, to: str, duration: Union[list, tuple], out: str):
         signed_url = get_signed_url(response, duration=duration)
 
         for name, direct_url in signed_url.items():
-            download(direct_url, name, filename=name, out=out)
+            file_name = format_everyday_filename(_from, name) if prepend_date else name
+            download(direct_url, file_name, filename=file_name, out=out)
         _from += timedelta(days=1)
 
 

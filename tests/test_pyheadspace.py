@@ -5,16 +5,18 @@ headspace, it makes it difficult to write automated tests.
 
 import base64
 import json
+from datetime import date
 
 import pytest
 
 from pyheadspace import auth
-from pyheadspace.__main__ import round_off
+from pyheadspace.__main__ import format_everyday_filename, round_off
 
 
 class FakeResponse:
-    def __init__(self, text):
+    def __init__(self, text, status_code=200):
         self.text = text
+        self.status_code = status_code
 
 
 def test_round_off_duration():
@@ -35,6 +37,12 @@ def test_round_off_duration():
     assert round_off(7 * 60_000) == 5
     assert round_off(10.2 * 60_000) == 10
     assert round_off(16 * 60_000) == 15
+
+
+def test_everyday_filename_includes_date_prefix():
+    assert format_everyday_filename(date(2021, 3, 10), "Breathing Exercise") == (
+        "2021-03-10 - Breathing Exercise"
+    )
 
 
 def test_get_client_id_retries_after_rate_limit(monkeypatch):

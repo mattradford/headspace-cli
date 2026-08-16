@@ -157,12 +157,16 @@ headspace everyday
 # Download everyday meditations for a specific date range
 # DATE FORMAT: yyyy-mm-dd
 headspace everyday --from 2021-03-01 --to 2021-03-20
+
+# Prefix each daily meditation filename with its date
+headspace everyday --prepend-date
 ```
 
 **Options**:
 ```sh
 --from TEXT          Start date. FORMAT: yyyy-mm-dd
 --to TEXT            End date. FORMAT: yyyy-mm-dd
+--prepend-date       Prefix each downloaded file with the date.
 -d, --duration TEXT  Duration or list of duration.
 --out TEXT           Download directory.
 --help               Show this message and exit.
